@@ -176,20 +176,35 @@ result = optimize(f, bounds, algorithm)
 
 We can play around with some of the conditions of the optomization above in order to gain some knowledge on the effects of certian values on the optomization. For example, we can vary D to develop our understanding of this parameter.
 ```{julia}
-trials = 1:2:19
-for D in trials
-    D = rand(trials)
-    bounds = boxconstraints(; lb=-5ones(D), ub=5ones(D))
-    # Optomization:
-    result = optimize(f, bounds)
-    # Minimum:
-    minimum(result)
-    # Value of the decision variable that achieves the minimum:
-    minimizer(result)
-    # Specifications:
-    options = Options(; time_limit=10.0)
-    algorithm = ECA(; options=options)
-    # Random Seed:
-    Random.seed!(918)
-    result = optimize(f, bounds, algorithm)
+function optomization()
+    trials = 1:2:19
+    for D in trials
+        D = rand(trials)
+        bounds = boxconstraints(; lb=-5ones(D), ub=5ones(D))
+        # Optomization:
+        result = optimize(f, bounds)
+        # Minimum:
+        minimum(result)
+        # Value of the decision variable that achieves the minimum:
+        minimizer(result)
+        # Specifications:
+        options = Options(; time_limit=10.0)
+        algorithm = ECA(; options=options)
+        # Random Seed:
+        Random.seed!(918)
+        result2 = optimize(f, bounds, algorithm)
+    end
+end
+```
+
+
+
+```{julia}
+df = DataFrame(
+    D = optomization.D,
+    results = result,
+    minumum = minimum(result),
+    minimizer = minimizer(result),
+    seed_result = result2
+)
 ```
