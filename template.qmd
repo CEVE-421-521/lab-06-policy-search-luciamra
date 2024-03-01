@@ -1,6 +1,6 @@
 ---
 title: "Lab 6: Policy Search"
-author: "Your Name (netID)"
+author: "Lucia Roemro-Alston (lmr12)"
 jupyter: julia-1.10
 date: 2024-03-01
 week: 7
@@ -54,4 +54,58 @@ Plots.default(; margin=5Plots.mm)
 function objective_function(a::AbstractFloat)
     return true # PLACEHOLDER
 end
+```
+
+## Objective Function
+
+We want to keep the same objective function that we have been using in order to find the net present value taking in the cost of heightening the house and the discounted expected costs of future flood damage. We also consider and define the states of the world over which we will analyze.
+The building I am studying is Fisherman's Wharf at 2200 Harborside Drive Galveston, TX.
+I got the information for the building area from the cvent website for event space. The value of the property results from searches on Zillow for average building prices in the area. Finally, the depth-damage curve which I chose is a result of location, building type, and what I am looking to analyze for damages. 
+```{julia}
+slr_scenarios = let
+    df = CSV.read("data/slr_oddo.csv", DataFrame)
+    [Oddo17SLR(a, b, c, tstar, cstar) for (a, b, c, tstar, cstar) in eachrow(df)]
+end
+
+house = let
+    haz_fl_dept = CSV.read("data/haz_fl_dept.csv", DataFrame) # read in the file
+    desc = "Cafeteria Restaurant, structure"
+    row = @rsubset(haz_fl_dept, :Description == desc)[1, :] # select the row I want
+    area = 4004u"ft^2"
+    height_above_gauge = 4*u"ft"
+    House(row; area=area, height_above_gauge=height_above_gauge, value_usd=400_000)
+end
+
+p = ModelParams(; house=house, years=2024:2100)
+
+function draw_surge_distribution()
+    μ = rand(Normal(5, 1))
+    σ = rand(Exponential(1.5))
+    ξ = rand(Normal(0.1, 0.05))
+    return GeneralizedExtremeValue(μ, σ, ξ)
+end
+function draw_discount_rate()
+    return 0.0
+end
+
+N_SOW = 10
+sows = [
+    SOW(rand(slr_scenarios), draw_surge_distribution(), draw_discount_rate()) for
+    _ in 1:N_SOW
+] # for 10 SOWs
+```
+
+## Validation
+
+We can validate our answer by comparing it to a simple Monte Carlo estimate using 25,000 samples and timing how long this takes us. 
+```{julia}
+a = Action(3.0u"ft")
+sow = first(sows)
+_ = run_sim(a, sow, p)
+@time run_sim(a, sow, p)
+```
+
+```{julia}
+_ = HouseElevation.run_sim_old(a, sow, p)
+@time HouseElevation.run_sim_old(a, sow, p)
 ```
