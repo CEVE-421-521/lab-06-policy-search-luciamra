@@ -109,3 +109,87 @@ _ = run_sim(a, sow, p)
 _ = HouseElevation.run_sim_old(a, sow, p)
 @time HouseElevation.run_sim_old(a, sow, p)
 ```
+
+## Optomization Problem
+
+We are looking to solve a non-linear, non-convex optomization problem using the Metaheuristics.jl package.
+The following plots the dunction we are looking to minimize for D=2.
+```{julia}
+f(x) = 10length(x) + sum(x .^ 2 - 10cos.(2π * x))
+let
+    # Generate a grid of points for the surface plot
+    x = range(-5; stop=5, length=1000)
+    y = range(-5; stop=5, length=1000)
+    z = [f([i, j]) for i in x, j in y]
+
+    # Create the surface plot
+    surface(
+        x, y, z; xlabel="x1", ylabel="x2", zlabel="f(x)", title=L"Minimize $f(x)$ for $D=2$"
+    )
+end
+```
+
+Now, if we want to minimize with D=10, we have to define bounds that constrians the search space to the decision variables.
+```{julia}
+D = 10
+bounds = boxconstraints(; lb=-5ones(D), ub=5ones(D))
+```
+
+This can be optomized using the optomize function.
+```{julia}
+result = optimize(f, bounds)
+```
+
+The minimum of the objective function:
+```{julia}
+minimum(result)
+```
+
+The value of the decision variable that achieves the minimum:
+```{julia}
+minimizer(result)
+```
+
+It can be helpful to set constraints and specifications to the optomizer such as time limits, especially for problems that may take very long to run.
+```{julia}
+options = Options(; time_limit=10.0)
+```
+
+ We will use the ECA algorithm which is suggested as default.
+ ```{julia}
+ algorithm = ECA(; options=options)
+ ```
+
+ We will set a random seed to make our results more reproducable and to understand the sensitivity of our results with respect to the random seed.
+ ```{julia}
+ Random.seed!(918)
+result = optimize(f, bounds, algorithm)
+```
+
+And check for a different iteration:
+```{julia}
+Random.seed!(952)
+result = optimize(f, bounds, algorithm)
+```
+
+## Varying D
+
+We can play around with some of the conditions of the optomization above in order to gain some knowledge on the effects of certian values on the optomization. For example, we can vary D to develop our understanding of this parameter.
+```{julia}
+trials = 1:2:19
+for D in trials
+    D = rand(trials)
+    bounds = boxconstraints(; lb=-5ones(D), ub=5ones(D))
+    # Optomization:
+    result = optimize(f, bounds)
+    # Minimum:
+    minimum(result)
+    # Value of the decision variable that achieves the minimum:
+    minimizer(result)
+    # Specifications:
+    options = Options(; time_limit=10.0)
+    algorithm = ECA(; options=options)
+    # Random Seed:
+    Random.seed!(918)
+    result = optimize(f, bounds, algorithm)
+```
