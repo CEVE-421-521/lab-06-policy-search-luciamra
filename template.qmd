@@ -88,11 +88,14 @@ function draw_discount_rate()
     return 0.0
 end
 
-N_SOW = 10
+N_SOW = 100_000
 sows = [
     SOW(rand(slr_scenarios), draw_surge_distribution(), draw_discount_rate()) for
     _ in 1:N_SOW
-] # for 10 SOWs
+] # for 100,000 SOWs
+
+N_SOW_opt = 10
+sows_opt = rand(N_SOW) for _ in 1:N_SOW_opt
 ```
 
 ## Validation
@@ -110,7 +113,7 @@ _ = HouseElevation.run_sim_old(a, sow, p)
 @time HouseElevation.run_sim_old(a, sow, p)
 ```
 
-## Optomization Problem
+## Optomization Problem Example
 
 We are looking to solve a non-linear, non-convex optomization problem using the Metaheuristics.jl package.
 The following plots the function we are looking to minimize for D=2.
@@ -204,3 +207,9 @@ end
 
 x =optomization()
 ```
+
+From this analysis with D as the varying parameter, one general trend is an increase in the amount of iterations as the value of D increaes. There are some deviations to this trend, but for the most part this correlation is strong. Another interesting observation is the increase in the number of decision variables that result in the minimum value as the value for D increases. This means that there are more options for an ideal scenario that cuases minimization. The number of function calls is another result that increases along with the value of D in thsi analysis. Interestingly, the value of the minimum has no consistent trend, and the highest values of it occur around D values between 13 and 15.
+
+## Optomization
+
+In order to optimize our problem we must define an objective function that will include the objective and the SOWs over which we will analyse the problem.
