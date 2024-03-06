@@ -95,7 +95,7 @@ sows = [
 ] # for 100,000 SOWs
 
 N_SOW_opt = 10
-sows_opt = rand(N_SOW) for _ in 1:N_SOW_opt
+sows_opt = collect(Iterators.take(sows, 10))
 ```
 
 ## Validation
@@ -213,3 +213,67 @@ From this analysis with D as the varying parameter, one general trend is an incr
 ## Optomization
 
 In order to optimize our problem we must define an objective function that will include the objective and the SOWs over which we will analyse the problem.
+```{julia}
+function objective(a)
+    lr_scenarios = let
+        df = CSV.read("data/slr_oddo.csv", DataFrame)
+        [Oddo17SLR(a, b, c, tstar, cstar) for (a, b, c, tstar, cstar) in eachrow(df)]
+    end
+
+    house = let
+        haz_fl_dept = CSV.read("data/haz_fl_dept.csv", DataFrame) # read in the file
+        desc = "Cafeteria Restaurant, structure"
+        row = @rsubset(haz_fl_dept, :Description == desc)[1, :] # select the row I want
+        area = 4004u"ft^2"
+        height_above_gauge = 4*u"ft"
+        House(row; area=area, height_above_gauge=height_above_gauge, value_usd=400_000)
+    end
+
+    p = ModelParams(; house=house, years=2024:2100)
+
+    function draw_surge_distribution()
+        μ = rand(Normal(5, 1))
+        σ = rand(Exponential(1.5))
+        ξ = rand(Normal(0.1, 0.05))
+        return GeneralizedExtremeValue(μ, σ, ξ)
+    end
+    function draw_discount_rate()
+        return 0.0
+    end
+
+    N_SOW = 100_000
+    sows = [
+        SOW(rand(slr_scenarios), draw_surge_distribution(), draw_discount_rate()) for
+        _ in 1:N_SOW
+    ] # for 100,000 SOWs
+
+    # taking the first 10 SOWs drom those generated above
+    N_SOW_opt = 10
+    sows_opt = collect(Iterators.take(sows, 10))
+
+    # finding the npv of each N_SOW_opt
+    npv_each = [run_sim(a,s,p) for s in sows_opt]
+    # the negative sum of the expected values
+    min = -1.0*sum(npv_each)
+end
+```
+
+Testing this function for different heights:
+∆h = 1.0ft
+```{julia}
+a = Action(1.0u"ft")
+npv_min = objective(a)
+```
+
+∆h = 7.0ft
+```{julia}
+a = Action(7.0u"ft")
+npv_min = objective(a)
+```
+
+∆h = 13.0ft
+```{julia}
+a = Action(13.0u"ft")
+npv_min = objective(a)
+```
+
