@@ -211,6 +211,37 @@ From this analysis with D as the varying parameter, one general trend is an incr
 
 In order to optimize our problem we must define an objective function that will include the objective and the SOWs over which we will analyse the problem.
 ```{julia}
+# Sea Level Rise Scenarios:
+slr_scenarios = let
+    df = CSV.read("data/slr_oddo.csv", DataFrame)
+    [Oddo17SLR(a, b, c, tstar, cstar) for (a, b, c, tstar, cstar) in eachrow(df)]
+end
+
+# Flood Depth and Home-Specific Information:
+house = let
+    haz_fl_dept = CSV.read("data/haz_fl_dept.csv", DataFrame) # read in the file
+    desc = "Cafeteria Restaurant, structure"
+    row = @rsubset(haz_fl_dept, :Description == desc)[1, :] # select the row I want
+    area = 4004u"ft^2"
+    height_above_gauge = 4*u"ft"
+    House(row; area=area, height_above_gauge=height_above_gauge, value_usd=400_000)
+end
+
+p = ModelParams(; house=house, years=2024:2100)
+
+# Surge Distribiton:
+function draw_surge_distribution()
+    μ = rand(Normal(5, 1))
+    σ = rand(Exponential(1.5))
+    ξ = rand(Normal(0.1, 0.05))
+    return GeneralizedExtremeValue(μ, σ, ξ)
+end
+# Discount Rate:
+function draw_discount_rate()
+    return 0.0
+end
+
+# Combination of information above to create different states of the world:
 N_SOW = 100_000
 sows = [
     SOW(rand(slr_scenarios), draw_surge_distribution(), draw_discount_rate()) for
@@ -222,38 +253,16 @@ N_SOW_opt = 10
 sows_opt = collect(Iterators.take(sows, 10))
 ```
 
+This is the objective function which will take in the SOW information from the cell above and use it to analyze a sat of actions, or home elevations over all of these SOWs. This will provide information on how a given home elvation will act across "all" scenarios. We then take the negative sum of these values to have a comparison over which to consider different actions.
 ```{julia}
-function objective(a)
-    lr_scenarios = let
-        df = CSV.read("data/slr_oddo.csv", DataFrame)
-        [Oddo17SLR(a, b, c, tstar, cstar) for (a, b, c, tstar, cstar) in eachrow(df)]
-    end
-
-    house = let
-        haz_fl_dept = CSV.read("data/haz_fl_dept.csv", DataFrame) # read in the file
-        desc = "Cafeteria Restaurant, structure"
-        row = @rsubset(haz_fl_dept, :Description == desc)[1, :] # select the row I want
-        area = 4004u"ft^2"
-        height_above_gauge = 4*u"ft"
-        House(row; area=area, height_above_gauge=height_above_gauge, value_usd=400_000)
-    end
-
-    p = ModelParams(; house=house, years=2024:2100)
-
-    function draw_surge_distribution()
-        μ = rand(Normal(5, 1))
-        σ = rand(Exponential(1.5))
-        ξ = rand(Normal(0.1, 0.05))
-        return GeneralizedExtremeValue(μ, σ, ξ)
-    end
-    function draw_discount_rate()
-        return 0.0
-    end
+function objective(a::Vector{Float64})
+    action = Action(a[1]*u"ft")
 
     # finding the npv of each N_SOW_opt
-    npv_each = [run_sim(a,s,p) for s in sows_opt]
+    npv_each = [run_sim(action,s,p) for s in sows_opt]
     # the negative sum of the expected values
     min = -1.0*sum(npv_each)
+    return min
 end
 ```
 
@@ -278,37 +287,24 @@ npv_min = objective(a)
 
 We can run an optimization of the objective function to find what elevation it recommends.
 ```{julia}
-function opt9mization_objective()
-    #∆h = 1.0:0.5:14.0
-    opt_obj_res = []
-    #∆h_res = []
-    #for h in ∆h
-        #a = Action(h*u"ft")
-        bounds = boxconstraints(; lb=0, ub=14)
-        # Optomization:
-        result = optimize(objective(a), bounds)
-        # Minimum:
-        minimum(result)
-        # Value of the decision variable that achieves the minimum:
-        minimizer(result)
-        # Specifications:
-        options = Options(; time_limit=10.0)
-        algorithm = ECA(; options=options)
-        # Random Seed:
-        Random.seed!(2024)
-        result2 = optimize(objective(a), bounds, algorithm)
-        push!(opt_obj_res, result2)
-
-    #end
-    return opt_obj_res
-end
-
-x =optimization_objective()
+bounds = boxconstraints(; lb=0.0, ub=14.0)
+# Optomization:
+result = optimize(objective, bounds)
+# Minimum:
+minimum(result)
+# Value of the decision variable that achieves the minimum:
+minimizer(result)
+# Specifications:
+options = Options(; time_limit=10.0)
+algorithm = ECA(; options=options)
+# Random Seed:
+Random.seed!(2024)
+result2 = optimize(objective, bounds, algorithm)
 ```
 
-This optimization function is not working for me, with the following error:
-no method matching optimize(::Float64, ::BoxConstrainedSpace{Int64})
-This does not allow me to continues with the project at this moment. We can however gage some information from the trials for the objective(a) function, which considered elevations of 1ft, 7ft, and 13ft. Between these three actions, the one with the lowest npv value is 7ft. demonstrating that the best options are in the middle.
+Based on the optimization of our objective function, we are finding that the minimizing action is elevating our building to ∆h = 14.0ft. 
+
+
 
 ## Reflection
 
