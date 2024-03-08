@@ -305,3 +305,17 @@ end
 
 x =optomization_objective()
 ```
+
+## Reflection
+
+How are we framing this problem? What are the decision variables, the objective function, and the states of the world over which we optimize?
+
+In order to optimize this problem, we are setting it up as a means to figure out which one of our actions are policies has the best results when the simulation is run on them and parameters are varied. The decision variable is how high to elevate our home, and the objective function gives us data about our home and the flooding and surge distributions surrounding my building. The states of the world over which we optimize are different situations composed of real life considerations that make up the environment for a trial of our solutions. The state of the world can include future economy (discount rate), surge situations, and sea level rise. 
+
+Diggning deeper, we are averaging the objective function computed over a finite number of states of the world. This assumes that they are all drawn from a distribution representing the “true” distribution of states of the world. Is this a good assumption?
+
+This is a good assumption for our current modeling capabilities and with limited computer efficiency. If we had the ability to do so, we would ideally run infinate simulations so that the function converges onto one value. Because this is not possible, we can get a good unferstanding of what would happen if this were the case and develop further knowledge on a topic that is difficult to predict.
+
+What’s not being considered in this analysis that might be important?
+
+One thing that is not being considered in this analysis that can have a significant imppact is fwater contamination and quality in our home's area. This can affect the way that the flooding intereacts with the home and as a result, the damages produced, making home elevation more or less important. There are also more personal and individual influences to whether or not someone will elevate their home like work promotions or job losses that can impact a persons ability to raise.
