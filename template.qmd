@@ -305,23 +305,31 @@ result2 = optimize(objective, bounds, algorithm)
 Based on the optimization of our objective function, we are finding that the minimizing action is elevating our building to ∆h = 14.0ft. 
 
 ```{julia}
-let
+npv_a = []
+x = 0.0:0.5:14.0
+for i in x
+    a = Action(x*u"ft")
+    f = objective(a)
+    push!(npv_a, f)
+end
+return npv_a
+#let
     # Generate a grid of points for the surface plot
-    x = range(0; stop=14, length=1000)
-    for i in x
+    #x = range(0; stop=14, length=1000)
+    #for i in x
     #u = []
-        v = Action(i[1]*u"ft")
+        #v = Action(i[1]*u"ft")
     #push!(u, v)
-        y = [objective(i::Vector{Float64})]
-    end
+        #y = [objective(i::Vector{Float64})]
+    #end
 
-    return y
+    #return y
 
     # Create the surface plot
     #surface(
         #x, y; xlabel="House Elevation ∆h", ylabel="Objective Function", title=L"Minimize Objective Function for ∆h=0-14ft"
     #)
-end
+#end
 ```
 
 ## Reflection
