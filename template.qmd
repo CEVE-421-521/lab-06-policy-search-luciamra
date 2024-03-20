@@ -261,7 +261,7 @@ function objective(a::Vector{Float64})
     # finding the npv of each N_SOW_opt
     npv_each = [run_sim(action,s,p) for s in sows_opt]
     # the negative sum of the expected values
-    min = -1.0*sum(npv_each)
+    min = -1.0 * mean(npv_each)
     return min
 end
 ```
@@ -269,19 +269,19 @@ end
 Testing this function for different heights:
 ∆h = 1.0ft
 ```{julia}
-a = Action(1.0u"ft")
+a = [1.0]
 npv_min = objective(a)
 ```
 
 ∆h = 7.0ft
 ```{julia}
-a = Action(7.0u"ft")
+a = [7.0]
 npv_min = objective(a)
 ```
 
 ∆h = 13.0ft
 ```{julia}
-a = Action(13.0u"ft")
+a = 13.0
 npv_min = objective(a)
 ```
 
@@ -305,17 +305,11 @@ result2 = optimize(objective, bounds, algorithm)
 Based on the optimization of our objective function, we are finding that the minimizing action is elevating our building to ∆h = 14.0ft. 
 
 ```{julia}
-npv_a = []
-x = 0.0:0.5:14.0
-for i in x
-    a = Action(x*u"ft")
-    f = objective(a)
-    push!(npv_a, f)
-end
-return npv_a
-#let
-    # Generate a grid of points for the surface plot
-    #x = range(0; stop=14, length=1000)
+possible_elevations = 0.0:0.5:14.0
+npv_a = objective.(possible_elevations)
+plot(possible_elevations, npv_a)
+
+plot(x, npv_a)
     #for i in x
     #u = []
         #v = Action(i[1]*u"ft")
