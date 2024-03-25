@@ -313,6 +313,8 @@ return NPVs
 scatter(possible_elevations, NPVs, legend=false)
 ```
 
+As is clear in this graph, the recommended elevation, 14.0ft, is the minimum, validating our results. 
+
 ## Reflection
 
 How are we framing this problem? What are the decision variables, the objective function, and the states of the world over which we optimize?
