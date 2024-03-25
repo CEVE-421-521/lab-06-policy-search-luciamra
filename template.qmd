@@ -148,7 +148,6 @@ The minimum of the objective function:
 minimum(result)
 ```
 
-
 The value of the decision variable that achieves the minimum:
 ```{julia}
 minimizer(result)
@@ -281,7 +280,7 @@ npv_min = objective(a)
 
 ∆h = 13.0ft
 ```{julia}
-a = 13.0
+a = [13.0]
 npv_min = objective(a)
 ```
 
@@ -305,25 +304,13 @@ result2 = optimize(objective, bounds, algorithm)
 Based on the optimization of our objective function, we are finding that the minimizing action is elevating our building to ∆h = 14.0ft. 
 
 ```{julia}
-possible_elevations = 0.0:0.5:14.0
-npv_a = objective.(possible_elevations)
-plot(possible_elevations, npv_a)
-
-plot(x, npv_a)
-    #for i in x
-    #u = []
-        #v = Action(i[1]*u"ft")
-    #push!(u, v)
-        #y = [objective(i::Vector{Float64})]
-    #end
-
-    #return y
-
-    # Create the surface plot
-    #surface(
-        #x, y; xlabel="House Elevation ∆h", ylabel="Objective Function", title=L"Minimize Objective Function for ∆h=0-14ft"
-    #)
-#end
+NPVs = []
+possible_elevations = [0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,12.5,13.0,13.5,14.0]
+a =[[getindex(possible_elevations,i)] for i in 1:length(possible_elevations)]
+npv_a = objective.(a)
+push!(NPVs, npv_a)
+return NPVs
+scatter(possible_elevations, NPVs, legend=false)
 ```
 
 ## Reflection
